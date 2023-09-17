@@ -1,2 +1,2 @@
-logging:
-  log: True
+log: True
+version: wheat_${now:%Y_%m_%d_%H_%M_%S}

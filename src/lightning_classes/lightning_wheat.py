@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict, Mapping, Optional
 
 import pytorch_lightning as pl
 import torch
@@ -13,47 +13,22 @@ from src.utils.utils import load_obj, collate_fn
 
 
 class LitWheat(pl.LightningModule):
-    def __init__(self, hparams: Dict[str, float], cfg: DictConfig):
+    def __init__(self, datamodule: pl.LightningDataModule, hparams: Dict[str, float], cfg: DictConfig):
         super(LitWheat, self).__init__()
         self.cfg = cfg
-        self.hparams: Dict[str, float] = hparams
+        self.data_module = datamodule
+        self.save_hyperparameters(hparams)
         self.model = get_wheat_model(self.cfg)
+        self.coco_evaluator: Optional[CocoEvaluator] = None
+        
         # if hasattr(self.model, 'parameters'):
         #     self.hparams['n_params'] = sum(p.numel() for p in self.model.parameters())
 
+    def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
+        return self.model.load_state_dict(state_dict=state_dict, strict=strict)
+    
     def forward(self, x, *args, **kwargs):
         return self.model(x)
-
-    def prepare_data(self):
-        datasets = get_training_datasets(self.cfg)
-        self.train_dataset = datasets['train']
-        self.valid_dataset = datasets['valid']
-
-    def train_dataloader(self):
-        train_loader = torch.utils.data.DataLoader(
-            self.train_dataset,
-            batch_size=self.cfg.data.batch_size,
-            num_workers=self.cfg.data.num_workers,
-            shuffle=True,
-            collate_fn=collate_fn,
-        )
-        return train_loader
-
-    def val_dataloader(self):
-        valid_loader = torch.utils.data.DataLoader(
-            self.valid_dataset,
-            batch_size=self.cfg.data.batch_size,
-            num_workers=self.cfg.data.num_workers,
-            shuffle=False,
-            collate_fn=collate_fn,
-        )
-
-        # prepare coco evaluator
-        self.coco = get_coco_api_from_dataset(valid_loader.dataset)
-        self.iou_types = _get_iou_types(self.model)
-        self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
-
-        return valid_loader
 
     def configure_optimizers(self):
         if 'decoder_lr' in self.cfg.optimizer.params.keys():
@@ -78,7 +53,8 @@ class LitWheat(pl.LightningModule):
         loss_dict = self.model(images, targets)
         # total loss
         losses = sum(loss for loss in loss_dict.values())
-
+        self.log_dict(loss_dict, sync_dist=True, prog_bar=True)
+        self.log('losses', losses, sync_dist=True, prog_bar=True)
         return {'loss': losses, 'log': loss_dict, 'progress_bar': loss_dict}
 
     def validation_step(self, batch, batch_idx):
@@ -88,18 +64,28 @@ class LitWheat(pl.LightningModule):
         outputs = self.model(images, targets)
         outputs = [{k: v for k, v in t.items()} for t in outputs]
         res = {target['image_id'].item(): output for target, output in zip(targets, outputs)}
-        self.coco_evaluator.update(res)
+        if self.coco_evaluator:
+            self.coco_evaluator.update(res)
+        else:
+            raise ValueError(f'self.coco_evaluator not set')
 
         return {}
 
-    def validation_epoch_end(self, outputs):
-        self.coco_evaluator.synchronize_between_processes()
-        self.coco_evaluator.accumulate()
-        self.coco_evaluator.summarize()
-        # coco main metric
-        metric = self.coco_evaluator.coco_eval['bbox'].stats[0]
-        metric = torch.as_tensor(metric)
-        tensorboard_logs = {'main_score': metric}
-        # re-initialise coco_evaluator after end of each epoch 
-        self.coco_evaluator = CocoEvaluator(self.coco, self.iou_types)
-        return {'val_loss': metric, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
+    def on_validation_epoch_start(self):
+        # re-initialise coco_evaluator at the start of each epoch
+        coco = get_coco_api_from_dataset(self.data_module.valid_dataset)
+        iou_types = _get_iou_types(self.model)        
+        self.coco_evaluator = CocoEvaluator(coco, iou_types)
+        
+    def on_validation_epoch_end(self):
+        if self.coco_evaluator:
+            self.coco_evaluator.synchronize_between_processes()
+            self.coco_evaluator.accumulate()
+            self.coco_evaluator.summarize()
+            # coco main metric
+            metric = self.coco_evaluator.coco_eval['bbox'].stats[0]
+            metric = torch.as_tensor(metric)
+            self.log('main_score', metric, sync_dist=True, prog_bar=True)
+            # return {'val_loss': metric, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
+        else:
+            raise ValueError(f'self.coco_evaluator not set')

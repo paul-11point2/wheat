@@ -6,7 +6,6 @@ from typing import Union, List, Tuple, Dict
 import numpy as np
 import pycocotools.mask as mask_util
 import torch
-import torch._six
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
@@ -227,7 +226,7 @@ def loadRes(self, resFile):
 
     # print('Loading and preparing results...')
     # tic = time.time()
-    if isinstance(resFile, torch._six.string_classes):
+    if isinstance(resFile, str):
         anns = json.load(open(resFile))
     elif type(resFile) == np.ndarray:
         anns = self.loadNumpyAnnotations(resFile)

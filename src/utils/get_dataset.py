@@ -22,7 +22,7 @@ def load_augs(cfg: DictConfig) -> A.Compose:
         compose object
     """
     augs = []
-    for a in cfg:
+    for a in cfg.augs:
         if a['class_name'] == 'albumentations.OneOf':
             small_augs = []
             for small_aug in a['params']:
@@ -40,7 +40,7 @@ def load_augs(cfg: DictConfig) -> A.Compose:
             aug = load_obj(a['class_name'])(**params)
             augs.append(aug)
 
-    return A.Compose(augs)
+    return A.Compose(augs, bbox_params=A.BboxParams(format=cfg.bbox_params.format, label_fields=cfg.bbox_params.label_fields))
 
 
 def get_training_datasets(cfg: DictConfig) -> Dict:
@@ -80,8 +80,8 @@ def get_training_datasets(cfg: DictConfig) -> Dict:
     dataset_class = load_obj(cfg.dataset.class_name)
 
     # initialize augmentations
-    train_augs = load_augs(cfg['augmentation']['train']['augs'])
-    valid_augs = load_augs(cfg['augmentation']['valid']['augs'])
+    train_augs = load_augs(cfg['augmentation']['train'])
+    valid_augs = load_augs(cfg['augmentation']['valid'])
 
     train_dataset = dataset_class(dataframe=train_df, mode='train', image_dir=train_img_dir, cfg=cfg, transforms=train_augs)
 
