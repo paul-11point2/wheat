@@ -1,0 +1,5 @@
+folder_path: /mnt/data/blinxter/files
+training_img_path: ${data.folder_path}/screenshots
+csv_file: screenshots_blinxter.csv
+num_workers: 32
+batch_size: 4

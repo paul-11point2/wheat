@@ -1,16 +1,11 @@
-from typing import Callable, Optional
 from omegaconf import DictConfig
 import torch
-import pandas as pd
 import pytorch_lightning as pl
 
 from src.utils.get_dataset import get_training_datasets
 from src.utils.utils import  collate_fn
-from src.utils.coco_utils import get_coco_api_from_dataset, _get_iou_types
 from src.utils.get_dataset import get_training_datasets
-from src.utils.get_model import get_wheat_model
-from src.utils.utils import load_obj, collate_fn
-from src.utils.coco_eval import CocoEvaluator
+from src.utils.utils import collate_fn
 
 class WheatDataModule(pl.LightningDataModule):
     def __init__(

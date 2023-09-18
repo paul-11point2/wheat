@@ -1,3 +1,4 @@
+import logging
 import os
 
 import hydra
@@ -10,6 +11,9 @@ from pytorch_lightning.loggers import CometLogger, TensorBoardLogger
 from src.lightning_classes.lightning_wheat import LitWheat
 from src.utils.get_dataset import get_test_dataset
 from src.utils.utils import set_seed, format_prediction_string, collate_fn
+
+
+logger = logging.getLogger(__name__)
 
 
 def predict(cfg: DictConfig) -> None:
@@ -57,7 +61,7 @@ def predict(cfg: DictConfig) -> None:
 
 @hydra.main(config_path='conf/config.yaml')
 def run_model(cfg: DictConfig) -> None:
-    print(cfg.pretty())
+    logger.info(cfg.pretty())
     predict(cfg)
 
 

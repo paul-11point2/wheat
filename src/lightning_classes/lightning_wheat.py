@@ -1,15 +1,17 @@
+import logging
 from typing import Any, Dict, Mapping, Optional
 
 import pytorch_lightning as pl
 import torch
 from omegaconf import DictConfig
-from torch.utils.data import Dataset
 
 from src.utils.coco_eval import CocoEvaluator
 from src.utils.coco_utils import get_coco_api_from_dataset, _get_iou_types
-from src.utils.get_dataset import get_training_datasets
 from src.utils.get_model import get_wheat_model
-from src.utils.utils import load_obj, collate_fn
+from src.utils.utils import load_obj
+
+
+logger = logging.getLogger(__name__)
 
 
 class LitWheat(pl.LightningModule):
@@ -20,6 +22,7 @@ class LitWheat(pl.LightningModule):
         self.save_hyperparameters(hparams)
         self.model = get_wheat_model(self.cfg)
         self.coco_evaluator: Optional[CocoEvaluator] = None
+        self.metric = torch.as_tensor(0.0)
         
         # if hasattr(self.model, 'parameters'):
         #     self.hparams['n_params'] = sum(p.numel() for p in self.model.parameters())
@@ -46,16 +49,24 @@ class LitWheat(pl.LightningModule):
                               'interval': self.cfg.scheduler.step,
                               'monitor': self.cfg.scheduler.monitor}]
 
+    def accumulate_losses(self, loss_dict):
+        for k, v in loss_dict.items():
+            if self.loss_dict.get(k):
+                self.loss_dict[k].append(v)
+            else:
+                self.loss_dict[k] = [loss_dict[k]]
+        
     def training_step(self, batch, batch_idx):
         images, targets, image_ids = batch
         targets = [{k: v for k, v in t.items()} for t in targets]
         # separate losses
         loss_dict = self.model(images, targets)
         # total loss
-        losses = sum(loss for loss in loss_dict.values())
+        loss_dict['losses'] = sum(loss for loss in loss_dict.values())
         self.log_dict(loss_dict, sync_dist=True, prog_bar=True)
-        self.log('losses', losses, sync_dist=True, prog_bar=True)
-        return {'loss': losses, 'log': loss_dict, 'progress_bar': loss_dict}
+        self.log('main_score', self.metric, sync_dist=True, prog_bar=True)
+        # self.accumulate_losses(loss_dict)
+        return loss_dict['losses']
 
     def validation_step(self, batch, batch_idx):
         images, targets, image_ids = batch
@@ -68,9 +79,18 @@ class LitWheat(pl.LightningModule):
             self.coco_evaluator.update(res)
         else:
             raise ValueError(f'self.coco_evaluator not set')
+        self.log('main_score', self.metric, sync_dist=True, prog_bar=True)
 
         return {}
 
+    def on_train_epoch_start(self):
+        self.loss_dict = {}
+
+    def on_train_epoch_end(self):
+        pass
+        # for loss_name, loss in self.loss_dict.items():
+        #     self.log(loss_name, torch.mean(torch.tensor(loss)), sync_dist=True, prog_bar=True)
+                
     def on_validation_epoch_start(self):
         # re-initialise coco_evaluator at the start of each epoch
         coco = get_coco_api_from_dataset(self.data_module.valid_dataset)
@@ -84,8 +104,6 @@ class LitWheat(pl.LightningModule):
             self.coco_evaluator.summarize()
             # coco main metric
             metric = self.coco_evaluator.coco_eval['bbox'].stats[0]
-            metric = torch.as_tensor(metric)
-            self.log('main_score', metric, sync_dist=True, prog_bar=True)
-            # return {'val_loss': metric, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
+            self.metric = torch.as_tensor(metric)
         else:
             raise ValueError(f'self.coco_evaluator not set')

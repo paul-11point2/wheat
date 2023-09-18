@@ -1,0 +1,6 @@
+folder_path: /mnt/data/blinxter/files/wheat_data
+training_img_path: ${data.folder_path}/train
+csv_file: train.csv
+max_training_items: -1
+num_workers: 32
+batch_size: 16

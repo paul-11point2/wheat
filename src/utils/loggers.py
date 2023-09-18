@@ -1,8 +1,12 @@
 import argparse
 import csv
+import logging
 from typing import Dict, Optional, Union, Any
 import json
 from pytorch_lightning.loggers import LightningLoggerBase
+
+
+logger = logging.getLogger(__name__)
 
 
 class CsvLogger(LightningLoggerBase):
@@ -22,7 +26,7 @@ class CsvLogger(LightningLoggerBase):
         self.csv_path = csv_path
 
     def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None):
-        print('metrics', metrics)
+        logger.info('metrics', metrics)
         if step == 0:
             header = ['step'] + list(metrics.keys())
             with open(self.csv_path, 'w') as f:

@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Tuple, Dict, Union
 
 import numpy as np
@@ -32,8 +33,9 @@ class WheatDataset(Dataset):
         self.transforms = transforms
 
     def __getitem__(self, idx: int) -> Tuple[np.array, Dict[str, Union[torch.Tensor, np.array]], str]:
-        image_id = self.image_ids[idx].split('.')[0]
-        image = cv2.imread(f'{self.image_dir}/{image_id}.jpg', cv2.IMREAD_COLOR)
+        image_id = Path(self.image_ids[idx])
+        image_file = Path(self.image_dir, image_id) if image_id.suffix else Path(self.image_dir, f'{image_id}.jpg')
+        image = cv2.imread(str(image_file), cv2.IMREAD_COLOR)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
 
         # normalization.
@@ -48,7 +50,7 @@ class WheatDataset(Dataset):
 
         # for train and valid test create target dict.
         if self.mode != 'test':
-            image_data = self.df.loc[self.df['image_id'] == image_id]
+            image_data = self.df.loc[self.df['image_id'] == str(image_id)]
             boxes = image_data[['x', 'y', 'x1', 'y1']].values
 
             areas = image_data['area'].values

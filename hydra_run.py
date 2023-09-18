@@ -1,3 +1,5 @@
+import argparse
+import logging
 import os
 import warnings
 
@@ -17,6 +19,9 @@ from src.utils.utils import set_seed, save_useful_info, flatten_omegaconf
 warnings.filterwarnings("ignore")
 
 
+logger = logging.getLogger(__name__)
+
+
 def run(cfg: omegaconf.DictConfig) -> None:
     """
     Run pytorch-lightning model
@@ -25,6 +30,10 @@ def run(cfg: omegaconf.DictConfig) -> None:
         cfg: hydra config
 
     """
+    
+    # setup torch to used NVIDIA GeForce RTX 3090 CUDA device tensor cores correctly
+    torch.set_float32_matmul_precision('high')
+        
     set_seed(cfg.training.seed)
     hparams = flatten_omegaconf(cfg)
 
@@ -54,16 +63,19 @@ def run(cfg: omegaconf.DictConfig) -> None:
 
     # save as a simple torch model
     model_name = os.getcwd().split('\\')[-1] + '.pth'
-    print(model_name)
+    logger.info(model_name)
     torch.save(model.model.state_dict(), model_name)
 
-
-@hydra.main(config_path='conf', config_name='config')
+# Note that config_name must be provided on the command line. ie.
+# python hydra_run --config-name=wheat
+@hydra.main(config_path='conf')
 def run_model(cfg: omegaconf.DictConfig) -> None:
-    print(omegaconf.OmegaConf.to_yaml(cfg))
+    if len(cfg) == 0:
+        raise ValueError(f'Hydra configuration is empty. Looked in configuration directory "./conf". Did you specify --config-name=<CONF_FILE> on the command line?')
+    logger.info(omegaconf.OmegaConf.to_yaml(cfg))
     save_useful_info()
     run(cfg)
 
-
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     run_model()

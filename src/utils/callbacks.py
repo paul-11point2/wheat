@@ -11,7 +11,7 @@ class MetricsCallback(pl.Callback):
     >>> trainer = pl.Trainer(callbacks=[metrics_callback])
     >>> trainer.fit(model)
 
-    >>> print(metrics_callback.metrics)
+    >>> logger.info(metrics_callback.metrics)
 
     """
 

@@ -5,10 +5,25 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Hydra run",
+            "name": "Hydra run wheat",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/hydra_run.py",
+            "args": [
+                "--config-name=wheat",
+                "++data.max_training_items=50000"
+            ],
+            "console": "internalConsole",
+            "justMyCode": false
+        },
+        {
+            "name": "Hydra run screenshots",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/hydra_run.py",
+            "args": [
+                "--config-name=screenshots"
+            ],
             "console": "internalConsole",
             "justMyCode": false
         }

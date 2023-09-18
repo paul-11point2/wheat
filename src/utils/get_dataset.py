@@ -1,4 +1,5 @@
 import ast
+import logging
 from typing import Dict
 
 import albumentations as A
@@ -9,6 +10,9 @@ from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
 from src.utils.utils import load_obj
+
+
+logger = logging.getLogger(__name__)
 
 
 def load_augs(cfg: DictConfig) -> A.Compose:
@@ -54,8 +58,14 @@ def get_training_datasets(cfg: DictConfig) -> Dict:
         dict with datasets
     """
 
-    train = pd.read_csv(f'{cfg.data.folder_path}/train.csv')
+    train = pd.read_csv(f'{cfg.data.folder_path}/{cfg.data.csv_file}')
 
+
+    if cfg.data.get('max_training_items') and cfg.data.max_training_items > 0:
+        len_train = len(train)
+        train = train[0:cfg.data.max_training_items]
+        logger.info(f'WARNING: Truncating number of training items to specified cfg.data.max_training_items={cfg.data.max_training_items} from a total of {len_train}')
+        
     train[['x', 'y', 'w', 'h']] = pd.DataFrame(np.stack(train['bbox'].apply(lambda x: ast.literal_eval(x)))).astype(
         np.float32
     )
@@ -74,7 +84,7 @@ def get_training_datasets(cfg: DictConfig) -> Dict:
     train_df = train.loc[train['image_id'].isin(train_ids)]
     valid_df = train.loc[train['image_id'].isin(valid_ids)]
 
-    train_img_dir = f'{cfg.data.folder_path}/train'
+    train_img_dir = f'{cfg.data.training_img_path}'
 
     # train dataset
     dataset_class = load_obj(cfg.dataset.class_name)

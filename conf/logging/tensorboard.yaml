@@ -1,2 +1,2 @@
 log: True
-version: wheat_${now:%Y_%m_%d_%H_%M_%S}
+version: ${general.project_name}_${now:%Y_%m_%d_%H_%M_%S}

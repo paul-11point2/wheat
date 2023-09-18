@@ -1,6 +1,7 @@
 import copy
 import json
 from collections import defaultdict
+import logging
 from typing import Union, List, Tuple, Dict
 
 import numpy as np
@@ -10,6 +11,9 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 from src.utils import detection_utils as utils
+
+
+logger = logging.getLogger(__name__)
 
 
 class CocoEvaluator(object):
@@ -51,7 +55,7 @@ class CocoEvaluator(object):
 
     def summarize(self):
         for iou_type, coco_eval in self.coco_eval.items():
-            print(f'IoU metric: {iou_type}')
+            logger.info(f'IoU metric: {iou_type}')
             coco_eval.summarize()
 
     def prepare(self, predictions, iou_type):
@@ -182,7 +186,7 @@ def create_common_coco_eval(coco_eval, img_ids, eval_imgs):
 
 def createIndex(self):
     # create index
-    # print('creating index...')
+    # logger.info('creating index...')
     anns, cats, imgs = {}, {}, {}
     imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
     if 'annotations' in self.dataset:
@@ -202,7 +206,7 @@ def createIndex(self):
         for ann in self.dataset['annotations']:
             catToImgs[ann['category_id']].append(ann['image_id'])
 
-    # print('index created!')
+    # logger.info('index created!')
 
     # create class members
     self.anns = anns
@@ -224,7 +228,7 @@ def loadRes(self, resFile):
     res = COCO()
     res.dataset['images'] = [img for img in self.dataset['images']]
 
-    # print('Loading and preparing results...')
+    # logger.info('Loading and preparing results...')
     # tic = time.time()
     if isinstance(resFile, str):
         anns = json.load(open(resFile))
@@ -271,7 +275,7 @@ def loadRes(self, resFile):
             ann['area'] = (x2 - x1) * (y2 - y1)
             ann['id'] = id + 1
             ann['bbox'] = [x1, y1, x2 - x1, y2 - y1]
-    # print('DONE (t={:0.2f}s)'.format(time.time()- tic))
+    # logger.info('DONE (t={:0.2f}s)'.format(time.time()- tic))
 
     res.dataset['annotations'] = anns
     createIndex(res)
@@ -284,13 +288,13 @@ def evaluate(self):
     :return: None
     """
     # tic = time.time()
-    # print('Running per image evaluation...')
+    # logger.info('Running per image evaluation...')
     p = self.params
     # add backward compatibility if useSegm is specified in params
     if p.useSegm is not None:
         p.iouType = 'segm' if p.useSegm == 1 else 'bbox'
-        print(f'useSegm (deprecated) is not None. Running {p.iouType} evaluation')
-    # print('Evaluate annotation type *{}*'.format(p.iouType))
+        logger.info(f'useSegm (deprecated) is not None. Running {p.iouType} evaluation')
+    # logger.info('Evaluate annotation type *{}*'.format(p.iouType))
     p.imgIds = list(np.unique(p.imgIds))
     if p.useCats:
         p.catIds = list(np.unique(p.catIds))
@@ -316,7 +320,7 @@ def evaluate(self):
     evalImgs = np.asarray(evalImgs).reshape(len(catIds), len(p.areaRng), len(p.imgIds))
     self._paramsEval = copy.deepcopy(self.params)
     # toc = time.time()
-    # print('DONE (t={:0.2f}s).'.format(toc-tic))
+    # logger.info('DONE (t={:0.2f}s).'.format(toc-tic))
     return p.imgIds, evalImgs
 
 
