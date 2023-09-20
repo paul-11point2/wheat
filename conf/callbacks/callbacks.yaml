@@ -10,5 +10,5 @@ model_checkpoint:
   params:
     monitor: ${training.metric}
     save_top_k: 3
-    filename: saved_models/{epoch}_{main_score:.4f}
+    filename: saved_models/${general.project_name}_{epoch}_{main_score:.4f}
     mode: ${training.mode}

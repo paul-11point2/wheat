@@ -47,6 +47,38 @@ def load_augs(cfg: DictConfig) -> A.Compose:
     return A.Compose(augs, bbox_params=A.BboxParams(format=cfg.bbox_params.format, label_fields=cfg.bbox_params.label_fields))
 
 
+def load_replay_augs(cfg: DictConfig) -> A.Compose:
+    """
+    Load albumentations with ReplayCompose for debug purposes
+
+    Args:
+        cfg:
+
+    Returns:
+        ReplayCompose (debug) object
+    """
+    augs = []
+    for a in cfg.augs:
+        if a['class_name'] == 'albumentations.OneOf':
+            small_augs = []
+            for small_aug in a['params']:
+                # yaml can't contain tuples, so we need to convert manually
+                params = {k: (v if type(v) != omegaconf.listconfig.ListConfig else tuple(v)) for k, v in
+                          small_aug['params'].items()}
+                aug = load_obj(small_aug['class_name'])(**params)
+                small_augs.append(aug)
+            aug = load_obj(a['class_name'])(small_augs)
+            augs.append(aug)
+
+        else:
+            params = {k: (v if type(v) != omegaconf.listconfig.ListConfig else tuple(v)) for k, v in
+                      a['params'].items()}
+            aug = load_obj(a['class_name'])(**params)
+            augs.append(aug)
+
+    return A.ReplayCompose(augs, bbox_params=A.BboxParams(format=cfg.bbox_params.format, label_fields=cfg.bbox_params.label_fields))
+
+
 def get_training_datasets(cfg: DictConfig) -> Dict:
     """
     Get datases for modelling
@@ -78,6 +110,7 @@ def get_training_datasets(cfg: DictConfig) -> Dict:
 
     # for fast training
     if cfg.training.debug:
+        logger.info(f'WARNING: DEBUG ACTIVE. Truncating number of training items 10')
         train_ids = train_ids[:10]
         valid_ids = valid_ids[:10]
 

@@ -5,16 +5,16 @@ defaults:
   - logging: tensorboard
   - optimizer: adamw
   - scheduler: step
-  - model: basic_fastrcnn
+  - model: screenshots_fastrcnn
   - callbacks: callbacks
   - private: default
-  - data: wheat
-  - augmentation: basic_augs
+  - data: windows
+  - augmentation: screenshots_augs
 
 general:
   save_dir: ../
   workspace: paul-11point2
-  project_name: wheat_${data.max_training_items}
+  project_name: windows
   device: cuda
 
 hydra:

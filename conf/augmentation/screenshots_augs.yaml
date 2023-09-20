@@ -1,0 +1,49 @@
+train:
+  augs:
+  - class_name: src.utils.transforms.ResizeWithinBounds
+    params:
+      max_height: ${data.image_height}
+      max_width: ${data.image_width}
+      interpolation: 1
+      p: 1.0
+  - class_name: albumentations.PadIfNeeded
+    params:
+      min_height: ${data.image_height}
+      min_width: ${data.image_width}
+      position: random
+      border_mode: 0
+      value: 0.0
+      p: 1.0      
+  - class_name: albumentations.pytorch.transforms.ToTensorV2
+    params:
+      p: 1.0
+
+  bbox_params:
+    format: pascal_voc
+    label_fields:
+      - labels
+
+valid:
+  augs:
+  - class_name: src.utils.transforms.ResizeWithinBounds
+    params:
+      max_height: ${data.image_height}
+      max_width: ${data.image_width}
+      interpolation: 1
+      p: 1.0
+  - class_name: albumentations.PadIfNeeded
+    params:
+      min_height: ${data.image_height}
+      min_width: ${data.image_width}
+      position: random
+      border_mode: 0
+      value: 0.0
+      p: 1.0   
+  - class_name: albumentations.pytorch.transforms.ToTensorV2
+    params:
+      p: 1.0
+
+  bbox_params:
+    format: pascal_voc
+    label_fields:
+      - labels

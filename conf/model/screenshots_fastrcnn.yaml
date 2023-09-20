@@ -4,13 +4,13 @@ backbone:
     pretrained: True
     num_classes: 91
     pretrained_backbone: True
-    fixed_size: [1024, 1024]
+    fixed_size: [1080, 1920]
 #      trainable_backbone_layers: 5
 
 anchor_generator:
   class_name: torchvision.models.detection.anchor_utils.AnchorGenerator
   params:
-    anchor_sizes: [[32,], [64,], [128,], [256,], [512,]]
+    anchor_sizes: [[32,], [64,], [128,], [256,], [512,], [1024,], [2048,]]
     aspect_ratios: [0.5, 1.0, 2.0]
 
 head:

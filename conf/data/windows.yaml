@@ -3,4 +3,6 @@ training_img_path: ${data.folder_path}/screenshots
 csv_file: screenshots_windows.csv
 max_training_items: -1
 num_workers: 32
-batch_size: 4
+batch_size: 8
+image_height: 720
+image_width: 1280

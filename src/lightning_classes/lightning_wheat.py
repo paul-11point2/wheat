@@ -60,6 +60,10 @@ class LitWheat(pl.LightningModule):
         images, targets, image_ids = batch
         targets = [{k: v for k, v in t.items()} for t in targets]
         # separate losses
+        # - loss_rpn_box_reg - RPN box regression
+        # - loss_objectness - RPN objectness measures the membership to a set of object classes vs background
+        # - loss_classifier - ROI head classifier
+        # - loss_box_reg - ROI head box regression
         loss_dict = self.model(images, targets)
         # total loss
         loss_dict['losses'] = sum(loss for loss in loss_dict.values())

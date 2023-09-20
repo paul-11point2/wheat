@@ -26,6 +26,28 @@
             ],
             "console": "internalConsole",
             "justMyCode": false
+        },
+        {
+            "name": "Hydra run windows",
+            "type": "python",
+            "request": "launch",
+            "module": "hydra_run",
+            "args": [
+                "--config-name=windows"
+            ],
+            "console": "internalConsole",
+            "justMyCode": false
+        },
+        {
+            "name": "Test Augs",
+            "type": "python",
+            "request": "launch",
+            "module": "src.utils.test_augs",
+            "args": [
+                "--config-name=test_augs"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }

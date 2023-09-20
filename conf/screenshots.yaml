@@ -4,12 +4,12 @@ defaults:
   - training: default_training
   - logging: tensorboard
   - optimizer: adamw
-  - scheduler: plateau
-  - model: basic_fastrcnn
+  - scheduler: step
+  - model: screenshots_fastrcnn
   - callbacks: callbacks
   - private: default
   - data: screenshots
-  - augmentation: basic_augs
+  - augmentation: screenshots_augs
 
 general:
   save_dir: ../
@@ -19,7 +19,7 @@ general:
 
 hydra:
   run:
-    dir: ../model_checkpoints/${now:%Y_%m_%d_%H_%M_%S}
+    dir: ../model_checkpoints/${general.project_name}_${now:%Y_%m_%d_%H_%M_%S}
   sweep:
     dir: ../model_checkpoints/
-    subdir: ${now:%Y_%m_%d_%H_%M_%S}
+    subdir: ${general.project_name}_${now:%Y_%m_%d_%H_%M_%S}

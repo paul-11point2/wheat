@@ -2,6 +2,6 @@ class_name: torch.optim.lr_scheduler.StepLR
 step: epoch
 monitor: ${training.metric}
 params:
-  step_size: 10
+  step_size: 20
   gamma: 0.97
   last_epoch: -1
