@@ -98,6 +98,12 @@ def get_training_datasets(cfg: DictConfig) -> Dict:
         train = train[0:cfg.data.max_training_items]
         logger.info(f'WARNING: Truncating number of training items to specified cfg.data.max_training_items={cfg.data.max_training_items} from a total of {len_train}')
         
+
+    # for fast training
+    if cfg.training.debug:
+        logger.info(f'WARNING: DEBUG ACTIVE. Truncating number of training items 10')
+        train = train[:10]
+
     train[['x', 'y', 'w', 'h']] = pd.DataFrame(np.stack(train['bbox'].apply(lambda x: ast.literal_eval(x)))).astype(
         np.float32
     )
@@ -107,12 +113,6 @@ def get_training_datasets(cfg: DictConfig) -> Dict:
     train['y1'] = train['y'] + train['h']
     train['area'] = train['w'] * train['h']
     train_ids, valid_ids = train_test_split(train['image_id'].unique(), test_size=0.1, random_state=cfg.training.seed)
-
-    # for fast training
-    if cfg.training.debug:
-        logger.info(f'WARNING: DEBUG ACTIVE. Truncating number of training items 10')
-        train_ids = train_ids[:10]
-        valid_ids = valid_ids[:10]
 
     train_df = train.loc[train['image_id'].isin(train_ids)]
     valid_df = train.loc[train['image_id'].isin(valid_ids)]

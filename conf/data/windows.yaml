@@ -6,3 +6,4 @@ num_workers: 32
 batch_size: 8
 image_height: 720
 image_width: 1280
+num_classes: 2

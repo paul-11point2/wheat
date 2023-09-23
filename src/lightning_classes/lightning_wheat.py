@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
 import pytorch_lightning as pl
@@ -89,11 +90,6 @@ class LitWheat(pl.LightningModule):
 
     def on_train_epoch_start(self):
         self.loss_dict = {}
-
-    def on_train_epoch_end(self):
-        pass
-        # for loss_name, loss in self.loss_dict.items():
-        #     self.log(loss_name, torch.mean(torch.tensor(loss)), sync_dist=True, prog_bar=True)
                 
     def on_validation_epoch_start(self):
         # re-initialise coco_evaluator at the start of each epoch

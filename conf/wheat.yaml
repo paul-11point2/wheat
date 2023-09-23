@@ -13,6 +13,7 @@ defaults:
 
 general:
   save_dir: ../
+  checkpoint_dir: /mnt/data/blinxter/models
   workspace: paul-11point2
   project_name: wheat_${data.max_training_items}
   device: cuda

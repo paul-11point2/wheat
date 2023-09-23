@@ -1,6 +1,8 @@
+from pathlib import Path
 from typing import Any
 
 from omegaconf import DictConfig
+import torch
 
 from src.utils.utils import load_obj
 
@@ -36,5 +38,12 @@ def get_wheat_model(cfg: DictConfig) -> Any:
 
     # replace the pre-trained head with a new one
     model.roi_heads.box_predictor = head(in_features, cfg.model.head.params.num_classes)
+
+    if cfg.model.get('state_dict') and cfg.model.state_dict:
+        weights_checkpoint_path = Path(cfg.general.checkpoint_dir, cfg.model.state_dict).expanduser()
+        state_dict = torch.load(weights_checkpoint_path)['state_dict']
+        for key in list(state_dict.keys()):
+            state_dict[key.replace('model.', '')] = state_dict.pop(key)
+        model.load_state_dict(state_dict)
 
     return model

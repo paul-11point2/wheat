@@ -22,7 +22,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/hydra_run.py",
             "args": [
-                "--config-name=screenshots"
+                "--config-name=screenshots",
+                "training.debug=True"
             ],
             "console": "internalConsole",
             "justMyCode": false
